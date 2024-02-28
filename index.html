@@ -22,6 +22,12 @@
             });
             document.getElementById('loading').innerText = `Apollo Client ${ac.version} loaded`;
         }
+
+        window.addEventListener('message', (event) => {
+            if (event?.data?.source === 'apollo-client-devtools') {
+                console.log(JSON.parse(JSON.stringify(event.data)))
+            }
+        })
     </script>
     <div id="loading">Apollo Client loading...</div>
     <script>
