@@ -15,12 +15,30 @@
 
 <body>
     <script type="module">
-        globalThis.initializeAC = function initializeAC(pkg) {
-            const ac = new pkg.ApolloClient({
-                cache: new pkg.InMemoryCache(),
+        globalThis.initializeAC = async function initializeAC() {
+            const { ApolloClient, InMemoryCache, gql } = await importShim('@apollo/client/index.js')
+            const { SchemaLink } = await importShim('@apollo/client/link/schema/index.js')
+            const { schema } = await importShim('./schema.js')
+
+            const ac = new ApolloClient({
+                link: new SchemaLink({ schema }),
+                cache: new InMemoryCache(),
                 connectToDevTools: true,
             });
             document.getElementById('loading').innerText = `Apollo Client ${ac.version} loaded`;
+
+            const ALL_PEOPLE = gql`
+                query AllPeople {
+                    people {
+                    id
+                    name
+                    }
+                }
+            `;
+            // add a query to the cache for inspection
+            ac.query({ query: ALL_PEOPLE })
+
+            console.log({ client: ac })
         }
 
         window.addEventListener('message', (event) => {
@@ -35,13 +53,22 @@
         globalThis.version = new URL(document.location).searchParams.get('version') || 'latest'
 
         let params = new URLSearchParams(document.location.search);
-        fetch(`https://api.jspm.io/generate?install=@apollo/client@${globalThis.version}&env=development`).then(r => r.json()).then((generated) => {
-            importShim.addImportMap(generated.map);
-            document.body.appendChild(Object.assign(document.createElement('script'), {
-                type: 'module-shim',
-                textContent: `initializeAC((await import('@apollo/client')).default);`
-            }));
-        });
+
+        fetch(`https://api.jspm.io/generate?install=${JSON.stringify([{
+            target: `@apollo/client@${globalThis.version}`,
+            subpath: './index.js'
+        }, {
+            target: `@apollo/client@${globalThis.version}`,
+            subpath: './link/schema/index.js'
+        },
+            "graphql"])}&env=development`).then(r => r.json()).then((generated) => {
+
+                importShim.addImportMap(generated.map);
+                document.body.appendChild(Object.assign(document.createElement('script'), {
+                    type: 'module-shim',
+                    textContent: `initializeAC();`
+                }));
+            });
     </script>
     <select id="version">
         <option value="latest">latest</option>
