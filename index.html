@@ -35,10 +35,10 @@
                     }
                 }
             `;
-            // add a query to the cache for inspection
-            ac.query({ query: ALL_PEOPLE })
+            // add a watched query to the cache for inspection in the devtools
+            ac.watchQuery({ query: ALL_PEOPLE }).subscribe({ next: console.log });
 
-            console.log({ client: ac })
+            console.log({ client: ac, gql })
         }
 
         window.addEventListener('message', (event) => {
