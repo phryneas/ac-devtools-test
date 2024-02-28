@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Apollo Client Devtools test page</title>
+
+    <script type="esms-options">
+        {
+          "shimMode": true
+        }
+        </script>
+    <script src="https://ga.jspm.io/npm:es-module-shims@1.8.3/dist/es-module-shims.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <script type="module">
+        globalThis.initializeAC = function initializeAC(pkg) {
+            const ac = new pkg.ApolloClient({
+                cache: new pkg.InMemoryCache(),
+                connectToDevTools: true,
+            });
+            document.getElementById('loading').innerText = `Apollo Client ${ac.version} loaded`;
+        }
+    </script>
+    <div id="loading">Apollo Client loading...</div>
+    <script>
+        globalThis.__DEV__ = true;
+        globalThis.version = new URL(document.location).searchParams.get('version') || 'latest'
+
+        let params = new URLSearchParams(document.location.search);
+        fetch(`https://api.jspm.io/generate?install=@apollo/client@${globalThis.version}&env=development`).then(r => r.json()).then((generated) => {
+            importShim.addImportMap(generated.map);
+            document.body.appendChild(Object.assign(document.createElement('script'), {
+                type: 'module-shim',
+                textContent: `initializeAC((await import('@apollo/client')).default);`
+            }));
+        });
+    </script>
+    <select id="version">
+        <option value="latest">latest</option>
+        <script type="module">
+            const request = await fetch('https://registry.npmjs.org/@apollo/client', {
+                headers: {
+                    'Accept': 'application/vnd.npm.install-v1+json'
+                }
+            });
+            const json = await request.json();
+            const versions = Object.keys(json.versions).reverse();
+            const select = document.getElementById('version');
+            for (const version of versions) {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                select.appendChild(option);
+            };
+            select.value = globalThis.version;
+            select.addEventListener('change', () => {
+                const version = select.value;
+                const url = new URL(document.location);
+                url.searchParams.set('version', version);
+                document.location = url;
+            });
+        </script>
+    </select>
+</body>
+
+</html>
